@@ -1,0 +1,217 @@
+---
+title: "Assignment 4"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r setup}
+library(PxWebApiData)
+library(tidyverse)
+knitr::opts_chunk$set(eval = TRUE)
+```
+
+## Assignment 4; ssb data
+
+### Data hentet
+
+Data sist hentet 30. november 2020. Dette dokumentet skal bare kjøres hvis nye data må hentes inn. `eval = FALSE` over i setup chunk må endres til `eval = TRUE`, så må setup chunk-en kjøres før en til slutt velger  `Restart R and run all chunks` fra `Run` menyen.
+
+### Vektoren med de 418 kommunene vi vil bruke
+
+I perioden 1999 t.o.m 2014 er det relativt få kommunesammenslåinger. De som er har vi ekskludert fra vårt utvalg. Vi ender opp med en liste på 418 kommuner. Kommunenummer for disse er listet under.
+
+```{r}
+kom_vec <- c("0101",  "0104", "0105", "0106", "0111", "0118", "0119", "0121", "0122","0123", "0124", "0125", "0127", "0128", "0135", "0136", "0137", "0138", "0211", "0213", "0214", "0215", "0216", "0217", "0219", "0220", "0221", "0226", "0227", "0228", "0229", "0230", "0231", "0233", "0234", "0235", "0236", "0237", "0238", "0239", "0602", "0604", "0605", "0612", "0615", "0616", "0617", "0618", "0619", "0620", "0621", "0622", "0623", "0624", "0625", "0626", "0627", "0628", "0631", "0632", "0633", "0301", "0402", "0403", "0412", "0415", "0417", "0418", "0419", "0420", "0423", "0425", "0426", "0427", "0428", "0429", "0430", "0432", "0434", "0436", "0437", "0438", "0439", "0441", "0501", "0502", "0511", "0512", "0513", "0514", "0515", "0517",  "0519", "0520", "0521", "0522", "0528", "0529", "0532", "0533", "0534", "0536", "0538", "0540", "0541", "0542", "0543", "0544", "0545", "0702", "0706", "0709", "0711", "0713", "0714", "0719", "0720", "0722", "0723", "0728", "0805", "0806", "0807", "0811", "0814", "0815", "0817", "0819", "0821", "0822", "0826", "0827", "0828", "0829", "0830", "0831", "0833", "0834", "0901", "0904", "0906", "0911", "0912", "0914", "0919", "0926", "0928", "0929", "0935", "0937", "0938", "0940", "0941", "1001", "1002", "1003", "1004", "1014", "1017", "1018", "1021", "1026", "1027", "1029", "1032", "1034", "1037", "1046", "1101", "1102", "1103", "1106", "1111", "1112", "1114", "1119", "1120", "1121", "1122", "1124", "1127", "1129", "1130", "1133", "1134", "1135", "1141", "1142", "1144", "1145", "1146", "1149", "1151", "1201", "1211", "1216", "1219", "1221", "1222", "1223", "1224", "1227", "1228", "1231", "1232", "1233", "1234", "1235", "1238", "1241", "1242", "1243", "1244", "1245", "1246", "1247", "1251", "1252", "1253", "1256", "1259", "1260", "1263", "1264", "1265", "1266", "1401", "1411", "1412", "1413", "1416", "1417", "1418", "1419", "1420", "1421", "1422", "1424", "1426", "1428", "1429", "1430", "1431", "1432", "1433", "1438", "1439", "1441", "1443", "1444", "1445", "1449", "1502", "1504",  "1511", "1514", "1515", "1516", "1517", "1519", "1520", "1523", "1524", "1525", "1526", "1528", "1529", "1531", "1532", "1534", "1535", "1539", "1543", "1545", "1546", "1547", "1548", "1551", "1554", "1557", "1560", "1563", "1566", "1567", "1571", "1573", "1601", "1612", "1613", "1617", "1620", "1621", "1622", "1624", "1627", "1630", "1632", "1633", "1634", "1635", "1636", "1638", "1640", "1644", "1648", "1653", "1657", "1662", "1663", "1664", "1665", "1702", "1703", "1711", "1714", "1717", "1718", "1719", "1721", "1724", "1725", "1736", "1738", "1739", "1740", "1742", "1743", "1744", "1748", "1749", "1750", "1751", "1755", "1804", "1805", "1811", "1812", "1815", "1816", "1818", "1820", "1822", "1824", "1825", "1826", "1827", "1828", "1832", "1833", "1834", "1835", "1836", "1837", "1838", "1839", "1840", "1841", "1845", "1848", "1849", "1850", "1851", "1852", "1853", "1854", "1856", "1857", "1859", "1860", "1865", "1866", "1867", "1868", "1870", "1871", "1874", "1902", "1911", "1913", "1917", "1919", "1920", "1922", "1923", "1924", "1925", "1926", "1927", "1928", "1929", "1931", "1933", "1936", "1938", "1939", "1940", "1941", "1942", "1943", "2002", "2003", "2004", "2011", "2012", "2014", "2015", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025", "2027", "2028", "2030")
+```
+
+```{r}
+length(kom_vec)
+```
+
+### 1999 t.o.m. 2014 månedsbasis
+
+Vi bruker perioden januar 1999 t.o.m. mai 2014. Perioden har relativt få kommunejusteringer og god tilgang på data. Lag en vektor `tid_vec` på formen "1999M01", "1999M02", "1999M03", ... "2014M04", "2014M05. Bruk c(), paste(), rep() og str_pad(). Husk at rep() har et each argument. Et tips er å lage opp til 2014M12 og så fjerne de siste 7 elementene.
+
+```{r, echo=FALSE}
+# combine med c(), rep() se argument each, str_pad()
+# til å lage 01, 02...11, 12
+#tid_vec <- 
+#tid_vec <- tid_vec[]
+```
+
+```{r}
+#length(tid_vec)
+```
+
+
+```{r, ech0=FALSE}
+#c(head(tid_vec, n = 14), "...", tail(tid_vec, n = 14))
+```
+
+### Kjønn og aldersgruppe
+
+Vi trenger også disse som jeg har definert for dere.
+
+```{r}
+alder_vec <- c("15-74", "15-29", "30-74")
+kjonn_vec <- c("Menn", "Kvinner")
+```
+
+### Tabell 10540, arbeidsløse i %, per kommune, fordelt på alderskategorier, månedlig 1991M01-2014M05
+
+Arbeidsløshet i % for alderskategoriene "15-74 år" "15-29 år" og "30-74 år".
+
+Tabellen er på `418*185*3=231990` rekker som er under grensen på 800000 rekker. Kan derfor hente alt på en gang.
+
+`ApiData()` returnerer en liste med to elementer, hhv. det som kalles variabel-beskrivelse og verdier. For oss er det greit å hente `region` som er kommunenavn, alder og kjønn ("Kvinner", "Menn") fra den første og resten fra den andre listen. Husk at du kan hente innholdet i de to (dataframe) frem med hhv. `[[1]]` og `[[2]]`.
+
+```{r}
+arbl_p_alder <- ApiData(
+    10540,
+    Region = kom_vec,
+    Tid = tid_vec,
+    Alder = alder_vec
+  )
+
+df_arbl_p_alder <- data.frame(
+    knr = arbl_p_alder[[2]]$Region,
+    knavn = arbl_p_alder[[1]]$region,
+    alder = arbl_p_alder[[1]]$alder,
+    tid = arbl_p_alder[[2]]$Tid,
+    # arbeidsløse i prosent
+    alp = arbl_p_alder[[2]]$value
+)
+dim(df_arbl_p_alder)
+```
+
+### Tabell 04471, arbeidsløse i %, per kommune, etter kjønn, månedlig 1991M01-2014M05
+
+Her fordelt på kjønn. Vi har `418*185*2=154660` rekker som er under grensen på 800k. Kan derfor hente alt på en gang. Det er nå ikke lenger Alder som er statistikk variabel så den må byttes ut med `Kjonn =`
+
+```{r, echo=FALSE}
+#arbl_p_kjonn <- ApiData()
+
+#df_arbl_p_kjonn <- 
+```
+
+```{r}
+#dim(df_arbl_p_kjonn)
+#names(df_arbl_p_kjonn)
+```
+
+### Tabell 10594, Antall arbeidsløse per kommune, etter kjønn, månedlig 1991M01-2014M05
+
+Antall rekker vil være `418*185*2=154660`.
+
+Igjen er det `Kjonn` og ikke `Alder` som er statistikk-variabel.
+
+```{r, echo=FALSE}
+#arbl <- ApiData()
+
+#df_arbl <- 
+```
+
+```{r}
+dim(df_arbl)
+names(df_arbl)
+```
+
+### Tabell 07459, Befolkning årsklasser 000-105+ for årene 1999-2014
+
+Antall rekker blir `418*16*106*2=1417856` som er mer enn maks grensen på 800k. Splitter derfor på kjønn og får 708928 rekker for hvert kjønn.
+
+Bruk c() og str_pad() til å lage en `alder_klasse_vec` på formen "000", "001", "002" ... "104", "105+". Bruk denne som verdi for Alder i `ApiData()` kallet, dvs. `Alder = alder_klasse_vec`. Bruk hhv. Kjonn = "Kvinner" og Kjonn = "Menn" for å hente de respektive datasettene.
+
+```{r, echo=FALSE}
+#alder_klasse_vec <- 
+```
+
+```{r}
+#length(alder_klasse_vec)
+```
+
+```{r}
+#c(head(alder_klasse_vec, n = 5), "...", tail(alder_klasse_vec, n = 5))
+```
+
+
+#### Kvinner
+
+```{r}
+# Må splitte på kjønn pga maks grense på 800000 rekker
+bef_K <- ApiData(
+    07459,
+    Region = kom_vec,
+    Tid = as.character(1999:2014),
+    Alder = alder_klasse_vec,
+    Kjonn = "Kvinner"
+)
+
+df_bef_K <- data.frame(
+    knr = bef_K[[2]]$Region,
+    knavn = bef_K[[1]]$region,
+    tid = bef_K[[2]]$Tid,
+    # Vil ha Kvinner, Menn ikke 2, 1 i bef_K[[2]]$Kjonn
+    kjonn = bef_K[[1]]$kjønn,
+    # velger alder som 000 001 etc
+    alder = bef_K[[2]]$Alder,
+    bef = bef_K[[2]]$value
+)
+```
+
+```{r}
+#dim(df_bef_K)
+```
+
+#### Menn
+
+Hent ned tilsvarende befolkningsdata for menn.
+
+```{r, echo=FALSE}
+#bef_M <- ApiData()
+
+#df_bef_M <- 
+```
+
+```{r}
+#dim(df_bef_M)
+```
+
+### Write out the dataframes
+
+For kontroll.
+
+```{r}
+# names(df_arbl_p_alder)
+# names(df_arbl_p_kjonn)
+# names(df_arbl)
+# names(df_bef_K)
+# names(df_bef_M)
+```
+
+```{r}
+# dim(df_arbl_p_alder)
+# dim(df_arbl_p_kjonn)
+# dim(df_arbl)
+# dim(df_bef_K)
+# dim(df_bef_M)
+```
+
+```{r}
+write_csv(df_arbl_p_alder, file = "./ssb_df_arbl_p_alder.csv")
+write_csv(df_arbl_p_kjonn, file = "./ssb_df_arbl_p_kjonn.csv")
+write_csv(df_arbl, file = "./ssb_df_arbl.csv")
+write_csv(df_bef_K, file = "./ssb_df_bef_K.csv")
+write_csv(df_bef_M, file = "./ssb_df_bef_M.csv")
+```
+
+## Opprydding
+
+Vi har lagret det vi har hentet og kan nå rydde opp.
+
+```{r}
+# Fjern # fra neste hvis en vil slette alle objecter
+#rm(list = ls())
+```
+

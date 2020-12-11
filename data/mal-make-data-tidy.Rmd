@@ -1,0 +1,320 @@
+---
+title: "Assignment 4"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r setup}
+library(tidyverse)
+library(lubridate)
+```
+
+# Assignment 4;del 2; Tidy data
+
+I denne filen skal vi lese inn rådataene vi hentet fra SSB i `get-ssb-data.Rmd`. Vi skal gjøre dataene «tidy» og kombinere arbeidsløshetsdataene som er månedlige til en stor «tidy» tibble. Videre skal vi kombinere befolkningsdataene som er årlige til en stor «tidy» tibble. Disse to tibble-ene skal så lagres som `.csv` filer i mappen data. Disse to vil så senere bli lest inn i filen `model.Rmd` og være utgangspunktet for vårt modelleringsarbeide.
+
+Leser inn filene
+
+```{r}
+df_arbl_p_alder <- read_csv(file = "ssb_df_arbl_p_alder.csv")
+df_arbl_p_kjonn <- read_csv(file = "ssb_df_arbl_p_kjonn.csv")
+df_arbl <- read_csv(file = "ssb_df_arbl.csv")
+df_bef_K <- read_csv(file = "ssb_df_bef_K.csv")
+df_bef_M <- read_csv(file = "ssb_df_bef_M.csv")
+```
+
+## Problem med NA
+
+Vi har et problem med NA for små kommuner i `df_arbl` . Årsaken er såkalt «prikking» utfra personvernhensyn. Er det færre enn 3 (dvs. 0, 1, 2) personer i en kategori så mener SSB at det blir mulig å identifisere enkeltpersoner. Derfor «prikker» de, dvs. lager NA, verdier for observasjonene. Vi lar dette ligge nå, men et problem som det er greit å være oppmerksom på. Dere kommer ganske sikkert til å støte på det senere i studiet.
+
+```{r}
+#Utsira
+#View(df_arbl[df_arbl$knr == "1151",])
+#View(df_arbl_p_alder[df_arbl_p_alder$knr == "1151",])
+```
+
+# Gjøre arbeidsløshet «tidy»
+
+## Gjøre arbeidsløse i % aldersgrupper tidy; (`df_arbl_p_alder`)
+
+```{r}
+head(df_arbl_p_alder, n = 2)
+```
+
+### Endre kategorier i variabelen alder
+
+Å ha kategoriene "15-74 år" etc. er å be om problemer senere. Vi endrer til "15_74" etc..
+
+```{r}
+df_arbl_p_alder <- df_arbl_p_alder %>% 
+    mutate(
+        alder = case_when(
+            alder == "15-74 år" ~ "15_74",
+            alder == "15-29 år" ~ "15_29",
+            alder == "30-74 år" ~ "30_74"
+        )
+    )
+```
+
+### Bruk separate for splitte tid til aar og mnd
+
+```{r, echo=FALSE}
+#endrer også navn fra df_arbl_p_alder til arblos_aldersgrp
+#arblos_aldersgrp <- 
+#rm(df_arbl_p_alder)
+```
+
+### Fikse knavn
+
+Vi skal fjerne (-2019) etc som skjemmer navnene. Her får vi bruk for «regular expressions» fra kapittel 14 *Strings*. Jeg vil anbefale funksjonen `str_remove()`. Når det gjelder `pattern` så husk at det vi vil fjerne starter med *mellomrom*, før vi får en parentes, så kommer tall og en bindestrek (bruk character class) før det hele avsluttes med en parentes slutt. Husk at vi må benytte `\\` for «escape».
+
+```{r}
+# For å finne riktig pattern, fjern når ferdig
+# Fjern når du har funnet et pettern som virker
+test <- tibble(test_navn = c("Halden (-2019)", "Moss (-2019)", "Sarpsborg (1992-2019)", "Fredrikstad (1994-2019)", "Hvaler (-2019)"))
+str_remove(
+    string = test$test_navn, 
+    pattern = "H"
+    )
+```
+
+
+```{r, echo=FALSE}
+# Fern (-2019) etc
+#arblos_aldersgrp$knavn <- 
+```
+
+Slik skal de 10 første navnene nå se ut:
+
+```{r}
+head(unique(arblos_aldersgrp$knavn), n = 10)
+```
+
+### Pivot for å gjøre tidy
+
+arblos_aldersgrp er ikke tidy. Hver observasjon er spredd over tre rekke, hhv. 15_29, 30_74 og 15_74. Pivot dataframen `arblos_aldersgrp` slik at vi får en observasjon per rekke. Bruk opsjonen `names_prefix` og sett denne lik "alp_" slik at de tre nye variabelnavnene starter med dette. Bruk samtidig mutate til å endre variablene `aar`og `mnd` til integer.
+
+```{r, echo=FALSE}
+#arblos_aldersgrp <- 
+```
+
+Slik skal `arblos_aldersgrp` nå se ut.
+
+```{r}
+print(arblos_aldersgrp, n = 2)
+```
+
+
+Da skal `arblos_aldersgrp` være «tidy».
+
+## Gjøre arbeidløse (prosent) fordelt på kjønn tidy; (`df_arbl_p_kjonn`)
+
+`df_arbl_p_kjonn` er *ikke* tidy.
+
+```{r}
+print(arrange(df_arbl_p_kjonn, knr, knavn, tid, kjonn), n = 2)
+```
+
+Hva som må fikses i`df_arbl_p_kjonn`:
+
+1. Fiks knavn vha. `str_remove()`
+2. Splitte tid i `aar` og `mnd`, gjør til integer i samme slengen
+3. En observasjon per rekke, alp_Kvinner, alp_Menn som variabelnavn
+
+### Fikser knavn
+
+```{r, echo=FALSE}
+# Fern (-2019) etc
+#df_arbl_p_kjonn$knavn <- 
+```
+
+```{r}
+print(arrange(df_arbl_p_kjonn, knr, knavn, tid, kjonn), n = 2)
+```
+
+### Splitte tid
+
+```{r, echo=FALSE}
+#df_arbl_p_kjonn <- 
+```
+
+```{r}
+print(arrange(df_arbl_p_kjonn, knr, knavn, aar, mnd, kjonn), n = 2)
+```
+
+### En observasjon per rekke
+
+```{r, echo=FALSE}
+#df_arbl_p_kjonn <- 
+```
+
+```{r}
+print(arrange(df_arbl_p_kjonn, knr, knavn, aar, mnd), n = 2)
+```
+
+Da er `df_arbl_p_kjonn` «tidy».
+
+## Gjøre antall arbeidsløse fordelt på kjønn tidy; (`df_arbl`)
+
+```{r}
+print(df_arbl, n = 2)
+```
+
+Hva som må fikses i `df_arbl`:
+
+1. Fiks knavn vha. `str_remove()`
+2. Splitte tid i `aar` og `mnd`, gjør til integer i samme slengen
+3. En observasjon per rekke, al_Kvinner, al_Menn som variabelnavn
+
+Gjør som ovenfor.
+
+```{r, echo=FALSE}
+# Fikse navn
+#df_arbl$knavn <- 
+#df_arbl <- 
+#df_arbl <- 
+```
+
+Har du gjort det riktig skal `df_arbl` nå se slik ut.
+
+```{r}
+print(df_arbl, n = 2)
+```
+
+## Samle månedlige arbeisløshets-data i en tibble
+
+Før vi slår i sammen de tre tibble-ene vi har gjort «tidy» er det lurt å sjekke en siste gang at de er på den formen vi ønsker.
+
+### Slår sammen tre tibble til en
+
+Tenk nøye gjennom hvilke variabler man skal «joine» på.
+
+```{r, echo=FALSE}
+# arbeidsløse 1999 til 2014 månedlige data
+#al9914m <- 
+```
+
+```{r}
+print(al9914m, n = 2)
+```
+```{r}
+names(al9914m)
+dim(al9914m)
+```
+
+## Gjøre befolkning «tidy»
+
+Vi måtte dele befolkning i Menn og Kvinner da vi hentet dataene. Nå vil vi gjøre dem «tidy» og slå dem sammen.
+
+```{r}
+dim(df_bef_M)
+dim(df_bef_K)
+```
+
+```{r}
+print(arrange(df_bef_M, knr, knavn, tid, alder), n = 2)
+```
+
+Hver observasjon er spredt over 106 rekker!
+
+Vi vil bruke følgende strategi for å gjøre befolkning «tidy»:
+
+1. Endre variabel-navn bef til hhv. df_bef_K og df_bef_M. Slette variabelen kjonn i både df_bef_M og df_bef_K.
+2. Først slå sammen Menn og Kvinner så vi slipper å gjøre alt to ganger.
+3. Fikse navn
+4. Skifte navn fra tid til aar
+5. Gjøre om alder fra chr til integer
+5. Lage årsklasser for befolkningen. Vi trenger ikke 106
+6. Gjøre pivot_ så vi blir «tidy»
+
+### Endre variabel navn, fjerne kjonn
+
+```{r}
+df_bef_K <- df_bef_K %>% 
+    rename(bef_K = bef) %>% 
+    select(-kjonn)
+df_bef_M <- df_bef_M %>% 
+    rename(bef_M = bef) %>% 
+    select(-kjonn)
+```
+
+### Slå sammen df_bef_K og df_bef_M
+
+```{r, echo=FALSE}
+# Befolkning 1999 til 2014 Menn og Kvinner
+#bef9914MK <- 
+```
+
+```{r}
+dim(bef9914MK)
+names(bef9914MK)
+```
+
+### Fikser knavn
+
+Fiks kommunenavnene.
+
+```{r, echo=FALSE}
+#bef9914MK$knavn <- 
+```
+
+### Skifte navn fra tid til aar
+
+```{r, echo=FALSE}
+#bef9914MK <- 
+```
+
+### Gjøre om alder fra chr til integer
+
+Bruk først `str_replace()` til å endre "105+" til "105". Husk at "+" er et av tegnene som har spesiell betydning og må «escapes» med `\\`. Gjør så om fra chr til integer.
+
+```{r}
+bef9914MK <- bef9914MK %>%
+    mutate(
+        alder = str_replace(alder, "105\\+", "105"),
+        alder = as.integer(alder)
+    )
+```
+
+### Lage årsklasser for befolkningen
+
+Vi vil benytte årsklassene "0_14", "15_29", "30_74" og "75_105" siden disse samsvarer med dem brukt for arbeidsløshet. Bruk `mutate()`, `case_when()` og `alder %in% c(0:14) ~ "0_14"` osv. for å definere årsklassene. Gi variabelen med årsklassene navnet `ald_int`. Bruk så `group_by()` på knr, knavn, aar og ald_int og summer opp vha. `sum()`. La siste linjen i `summarise()` være `bef_MK = bef_K + bef_M` så får vi også med oss total befolkning for de ulike årsklassene.
+
+```{r, echo=FALSE}
+#bef9914MK <- 
+```
+
+```{r}
+print(bef9914MK, m = 2)
+```
+
+### Gjør `pivot_` så vi blir «tidy».
+
+```{r, echo=FALSE}
+#bef9914MK <- 
+```
+
+Gjør du ting rett skal `bef9914MK` nå se slik ut:
+
+```{r}
+print(bef9914MK, m = 2)
+```
+
+og ha dimensjonene:
+
+```{r}
+dim(bef9914MK)
+```
+
+## Skrive «tidy» data til fil
+
+```{r}
+write_csv(al9914m, "al9914m.csv")
+write_csv(bef9914MK, "bef9914MK.csv")
+```
+
+```{r}
+#rm(list = ls())
+```
+
