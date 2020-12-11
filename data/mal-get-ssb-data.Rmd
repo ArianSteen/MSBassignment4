@@ -36,17 +36,18 @@ Vi bruker perioden januar 1999 t.o.m. mai 2014. Perioden har relativt få kommun
 ```{r, echo=FALSE}
 # combine med c(), rep() se argument each, str_pad()
 # til å lage 01, 02...11, 12
-#tid_vec <- 
-#tid_vec <- tid_vec[]
+tid_vec <- c(paste(rep(1999:2014, 1, each = 12), paste(c("M01", "M02", "M03", "M04", "M05", "M06", "M07", "M08", "M09", "M10", "M11", "M12"))))
+tid_vec <- str_replace_all(tid_vec, fixed(" "), "")
+tid_vec <- tid_vec[1:185]
 ```
 
 ```{r}
-#length(tid_vec)
+length(tid_vec)
 ```
 
 
 ```{r, ech0=FALSE}
-#c(head(tid_vec, n = 14), "...", tail(tid_vec, n = 14))
+c(head(tid_vec, n = 14), "...", tail(tid_vec, n = 14))
 ```
 
 ### Kjønn og aldersgruppe
@@ -90,14 +91,24 @@ dim(df_arbl_p_alder)
 Her fordelt på kjønn. Vi har `418*185*2=154660` rekker som er under grensen på 800k. Kan derfor hente alt på en gang. Det er nå ikke lenger Alder som er statistikk variabel så den må byttes ut med `Kjonn =`
 
 ```{r, echo=FALSE}
-#arbl_p_kjonn <- ApiData()
-
-#df_arbl_p_kjonn <- 
+arbl_p_kjonn <- ApiData(
+  04471,
+  Region = kom_vec,
+  Tid = tid_vec,
+  Kjonn = kjonn_vec
+)
+df_arbl_p_kjonn <- data.frame (
+    knr = arbl_p_kjonn[[2]]$Region,
+    knavn = arbl_p_kjonn[[1]]$region,
+    kjonn = arbl_p_kjonn[[1]]$kjønn,
+    tid = arbl_p_kjonn[[2]]$Tid,  
+    alp_k = arbl_p_kjonn[[2]]$value
+)
 ```
 
 ```{r}
-#dim(df_arbl_p_kjonn)
-#names(df_arbl_p_kjonn)
+dim(df_arbl_p_kjonn)
+names(df_arbl_p_kjonn)
 ```
 
 ### Tabell 10594, Antall arbeidsløse per kommune, etter kjønn, månedlig 1991M01-2014M05
@@ -107,9 +118,19 @@ Antall rekker vil være `418*185*2=154660`.
 Igjen er det `Kjonn` og ikke `Alder` som er statistikk-variabel.
 
 ```{r, echo=FALSE}
-#arbl <- ApiData()
-
-#df_arbl <- 
+arbl <- ApiData(
+  10594,
+  Region = kom_vec,
+  Tid = tid_vec,
+  Kjonn = kjonn_vec
+)
+df_arbl <- data.frame (
+    knr = arbl[[2]]$Region,
+    knavn = arbl[[1]]$region,
+    tid = arbl[[2]]$Tid, 
+    kjonn = arbl[[1]]$kjønn,
+    al = arbl[[2]]$value
+)
 ```
 
 ```{r}
@@ -124,15 +145,15 @@ Antall rekker blir `418*16*106*2=1417856` som er mer enn maks grensen på 800k. 
 Bruk c() og str_pad() til å lage en `alder_klasse_vec` på formen "000", "001", "002" ... "104", "105+". Bruk denne som verdi for Alder i `ApiData()` kallet, dvs. `Alder = alder_klasse_vec`. Bruk hhv. Kjonn = "Kvinner" og Kjonn = "Menn" for å hente de respektive datasettene.
 
 ```{r, echo=FALSE}
-#alder_klasse_vec <- 
+alder_klasse_vec <- c(str_pad(0:104, width = 3, pad = "0"), "105+")
 ```
 
 ```{r}
-#length(alder_klasse_vec)
+length(alder_klasse_vec)
 ```
 
 ```{r}
-#c(head(alder_klasse_vec, n = 5), "...", tail(alder_klasse_vec, n = 5))
+c(head(alder_klasse_vec, n = 5), "...", tail(alder_klasse_vec, n = 5))
 ```
 
 
@@ -161,7 +182,7 @@ df_bef_K <- data.frame(
 ```
 
 ```{r}
-#dim(df_bef_K)
+dim(df_bef_K)
 ```
 
 #### Menn
@@ -169,13 +190,27 @@ df_bef_K <- data.frame(
 Hent ned tilsvarende befolkningsdata for menn.
 
 ```{r, echo=FALSE}
-#bef_M <- ApiData()
-
-#df_bef_M <- 
+bef_M <- ApiData(
+  07459,
+  Region = kom_vec,
+  Tid = as.character(1999:2014),
+  Alder = alder_klasse_vec,
+  Kjonn = "Menn"
+)
+df_bef_M <- data.frame(
+  knr = bef_M[[2]]$Region, 
+  knavn = bef_M[[1]]$region,
+  tid = bef_M[[2]]$Tid,
+  
+    kjonn = bef_M[[1]]$kjønn,
+  
+    alder = bef_M[[2]]$Alder,
+    bef = bef_M[[2]]$value
+)
 ```
 
 ```{r}
-#dim(df_bef_M)
+dim(df_bef_M)
 ```
 
 ### Write out the dataframes
@@ -183,19 +218,19 @@ Hent ned tilsvarende befolkningsdata for menn.
 For kontroll.
 
 ```{r}
-# names(df_arbl_p_alder)
-# names(df_arbl_p_kjonn)
-# names(df_arbl)
-# names(df_bef_K)
-# names(df_bef_M)
+names(df_arbl_p_alder)
+names(df_arbl_p_kjonn)
+names(df_arbl)
+names(df_bef_K)
+names(df_bef_M)
 ```
 
 ```{r}
-# dim(df_arbl_p_alder)
-# dim(df_arbl_p_kjonn)
-# dim(df_arbl)
-# dim(df_bef_K)
-# dim(df_bef_M)
+dim(df_arbl_p_alder)
+dim(df_arbl_p_kjonn)
+dim(df_arbl)
+dim(df_bef_K)
+dim(df_bef_M)
 ```
 
 ```{r}
