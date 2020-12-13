@@ -133,7 +133,7 @@ wf %>%
 
 Hvordan kan pukkelen rett før 2010 forklares?
 
-Svar = Av grafen ovenfor kan vi lese at, rett før 2010 at arbeidsstyrken til begge to grupper(Menn og Kvinner) er lavere enn 0.6, ved bruk av formelen wf_K/bef_K for kvinner og wf_M/bef_M for menn. Vi ser også at den røde linjen er 'slightly' høyere enn den blå, dvs  arbeidsstyrken relativt til befolkningen for kvinner er høyere sammenlignet med menn. 
+Svar = Av grafen ovenfor kan vi lese at, rett før 2010 arbeidsstyrken til begge to grupper(Menn og Kvinner) er lavere enn 0.6, ved bruk av formelen wf_K/bef_K for kvinner og wf_M/bef_M for menn. Vi ser også at den røde linjen er 'slightly' høyere enn den blå, dvs  arbeidsstyrken relativt til befolkningen for kvinner er høyere sammenlignet med menn. 
 NB, utifra formelen og data vi har brukt her, så kommer kvinner høyere enn menn. Samtidig når man sjekker med ssb's analyse for arbeidsstyrken (Kjønnsbasert) ser vi at menn har større arbeidsstyrke enn kvinner. Vi kan ikke finne logisk argument for denne forskjellen og må undersøke videre. 
 
 ```{r}
@@ -165,7 +165,17 @@ print(wf_f, n = 5)
 Lag også en ny tibble bef_f fra bef som inneholder befolkningen i hvert fylke hvert år.
 
 ```{r, echo=FALSE}
-# bef_f <- bef %>% 
+bef_f <- bef %>% 
+  mutate(
+        fylke = substr(knr, start = 1, stop = 2)
+    ) %>% 
+    group_by(aar, fylke) %>% 
+    summarise(
+        bef_K_f = sum(bef_K, na.rm = TRUE),
+        bef_M_f = sum(bef_M, na.rm = TRUE),
+        bef_KM_f = bef_K_f + bef_M_f
+    ) %>% 
+    select(aar, fylke, bef_K_f, bef_M_f, bef_KM_f)
 
 ```
 ```{r}
@@ -175,7 +185,9 @@ bef_f
 Lag til slutt tibble-en wf_f_bef som innholde arbeidsstyrke (wf-f) og befolkning (bef-f) på fylkesnivå for hvert år.
 
 ```{r, echo=FALSE}
-#wf_f_bef <- wf_f %>% 
+wf_f_bef <- wf_f %>% 
+  right_join(bef_f) %>% 
+  arrange(fylke, aar, mnd)
 ```
 
 Da skal wf_f_bef se slik ut:
@@ -187,11 +199,14 @@ Plot nå arbeidsstyrke relativt til befolkning vha. geom_line()
 
 ```{r, echo=FALSE}
 # kvinner og menn
-#wf_f_bef %>% 
-#    ggplot() +
+wf_f_bef %>%
+  ggplot() +
+  geom_line(wf_f_bef, mapping = aes(x = år,
+                                    y = wf_KM_f/bef_KM_f,
+                                    color = fylke)) +
+  theme(legend.position = "bottom")
+
 ```
-
-
 ### Lage regioner
 
 Alle fylkene blir litt rotete så vi definerer istedet seks regioner vha. case_when()
@@ -226,24 +241,50 @@ Plot nå for regionene wf_KM_r/bef_KM_r, både vha. geom_line() og geom_smooth()
 
 ```{r, echo=FALSE}
 # kvinner og menn
-#wf_r %>% 
+wf_r %>% 
+  ggplot(wf_r, mapping = aes(x = dato, 
+                             y = wf_KM_r/bef_KM_r,
+                             color = region)) +
+  geom_line(alpha = 0.5) +
+  geom_smooth(se = FALSE) +
+  theme(legend.position = "bottom") +
+  ggtitle("Arbeidsstyrkens andel av befolkningen for regionene.") 
 ```
 
 Lag tilsvarende plot for kvinner.
 
 ```{r, echo=FALSE}
 # kvinner
-#wf_r %>% 
+wf_r %>% 
+  ggplot(wf_r, mapping = aes(x = dato, 
+                             y = wf_K_r/bef_K_r,
+                             color = region)) +
+  geom_line(alpha = 0.5) +
+  geom_smooth(se = FALSE) +
+  theme(legend.position = "bottom") +
+  ggtitle("Arbeidsstyrkens andel av befolkningen for kvinner per region.") 
 ```
 
 Lag tilsvarende plot for menn
 
 ```{r, echo=FALSE}
 # menn
-#wf_r %>% 
+wf_r %>% 
+  ggplot(wf_r, mapping = aes(x = dato, 
+                             y = wf_M_r/bef_M_r,
+                             color = region)) +
+  geom_line(alpha = 0.5) +
+  geom_smooth(se = FALSE) +
+  theme(legend.position = "bottom") +
+  ggtitle("Arbeidsstyrkens andel av befolkningen for menn per region.")
 ```
 
 Forlar kort den generelle utviklingen i arbeidsstyrken. Hva er det som «redder oss»?
+
+Svar: Grafen illustrerer flere momenter. Først ser vi at vestlandet (Blåfarge) har relativt høyere arbeidsstyrke sammenlignet med andre fylker. 
+Vi ser også at arbeidsstyrken holdt seg rundt 0.6 fra 2000 til 2010 og etter det har det synket, en grunn kan være nedgangen i oljesektoren etter 2010 (Oljeprisen falt dramatisk fra over 120 til lavere en 50). Når vi sammenligner de ulike plottene for kvinner og menn, kan man konkludere at kvinner har hatt en økende trend sammenlignet med menn. 
+Det som kan redde oss, dvs forbedre arbeidsstyrken er at økonomien utvikles slik at det gir mulighet til å sysselsette flere arbeidsledige.
+
 
 ## `nest()` arblos
 
@@ -268,12 +309,16 @@ Vi har nå en tibble med data for hver kommune inne i tibble-en arblos_by_knr.
 Skriv en funksjon som kjører den lineære modellen wf_KM ~ alp_15_29 + alp_30_74 på en input dataframe a_df. Kall funksjonen mod1 (i magel på noe bedre navn).
 
 ```{r, echo=FALSE}
-#mod1 <- 
+mod1 <- function(a_df){
+  lm(wf_KM ~ alp_15_29 + alp_30_74, data = a_df)}
 ```
 KJøre så modellen vha. funksjonen mod1 på data i arblos_by_knr, og lag en list-column i arblos_by_knr som inneholder modellen. Kjør også tidy og glance fra broom på modellene for å få hhv. koeffisienter og ulike summary av modellen. Lagre resultatene i hhv. mod1_arblos, mod1_arblos_coef og mod1_arblos_sum (i siste er sum forkortelse for summary)
 
 ```{r, echo=FALSE}
-#arblos_by_knr <- 
+arblos_by_knr <- arblos_by_knr %>% 
+  mutate(mod1_arblos = map(data, .f = mod1)) %>% 
+  mutate(mod1_arblos_coef = map(.x = mod1_arblos, .f = tidy)) %>% 
+  mutate(mod1_arblos_sum = map(.x = mod1_arblos, .f = glance)) 
 ```
 
 arblos_by_knr skal nå se ut slik:
@@ -308,7 +353,9 @@ Bruk så unnest() til å pakke ut mod1_arblos_coef og mod1_arblos_coef (husk at 
 
 ```{r, echo=FALSE}
 #modell arbeidsløse resultat
-#mod_arbl_re <- 
+mod_arbl_re <- arblos_by_knr %>% 
+  unnest(c("mod1_arblos_coef", "mod1_arblos_sum"), names_repair = "universal") %>% 
+  select(knr, knavn, term, estimate, std.error, p.value...9, adj.r.squared)
 ```
 
 Du skal da ha noe som ser slik ut:
@@ -349,7 +396,17 @@ kom_str_mod %>%
 Lag tilsvarende plot for alp_30_74.
 
 ```{r, echo=FALSE}
-#kom_str_mod %>% 
+kom_str_mod %>% 
+    filter(term == "alp_30_74") %>% 
+    filter(estimate > -500 & estimate < 500 ) %>%
+    filter(p.value...9 < 0.05) %>% 
+    ggplot(mapping = aes(
+        x = estimate,
+        y = p.value...9,
+        colour = k_str
+        )
+        ) +
+    geom_point()
 ```
 
 Hvor mange har vi?
