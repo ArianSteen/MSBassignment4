@@ -11,6 +11,7 @@ library(lubridate)
 library(tidyverse)
 library(broom)
 library(PxWebApiData)
+library(ggplot2)
 ```
 
 # Models & Reflections
@@ -22,3 +23,396 @@ arblos <- read_csv("data/al9914m.csv")
 bef <- read_csv("data/bef9914MK.csv")
 ```
 
+
+## Modeller med data fra *bef* (befolkning)
+
+```{r}
+names(bef)
+```
+
+```{r}
+names(arblos)
+```
+
+Arbeidsledighetsprosenten blir beregnet som: arbl% = antall arb. ledige/arbeidsstyrken. Arbeidsstyrken er her dem man anser egnet for arbeid dvs. uføretrygdete etc. er trukket ut. Arbeidsstyren i en aldesrkategori er derfor langt mindre enn befolkningen i den tilsvarende alderskategorien.
+
+Dessverre kjenne vi ikke arbeidsstyrken, men vi kan beregne den vha.: 
+arbeidsstyrken = antall arb. ledige/arb. ledighetsprosent.
+
+```{r}
+arblos <- arblos %>% 
+    mutate(
+        wf_K = (al_Kvinner/alp_Kvinner)*100,
+        wf_M = (al_Menn/alp_Menn)*100,
+        wf_KM = wf_K + wf_M
+    )
+```
+
+```{r}
+arblos
+```
+
+## Arbeidsstyrken
+
+Når befolkningen øker vil også arbeidsstyrken øke. Det er derfor mer naturlig å se på arbeidsstyrken relativt til delen av befolkningen som er i yrkesaktiv alder (15-74 år her).
+
+```{r}
+names(bef)
+```
+
+Vi skal starte med å lage et datasett med arbeidsstyrken (wf) for hele landet samlet, men fordelt på de tre kategorien kvinner, menn og kvinner + menn.
+
+Bruk data for januar hvert år til å beregne wf på landsbasis
+
+```{r}
+# årlige data landet samlet
+wf <- arblos %>% 
+    filter(mnd == 1) %>% 
+    group_by(aar) %>% 
+    summarise(
+        wf_K = sum(wf_K, na.rm = TRUE),
+        wf_M = sum(wf_M, na.rm = TRUE),
+        wf_KM = wf_K + wf_M
+    )
+```
+
+```{r}
+dim(wf)
+names(wf)
+```
+
+Summer de ulike årskategoriene for de to kjønnene og menn+kvinner for å finne total befolkning de ulike årene. Bruk mutate til å lage de nye variablene.
+
+```{r, echo=FALSE}
+ bef <- bef %>% 
+  mutate(bef_K = bef_K_0_14 + bef_K_15_29 + bef_K_30_74 + bef_K_75_105,
+         bef_M = bef_M_0_14 + bef_M_15_29 + bef_M_30_74 + bef_M_75_105,
+         bef_KM = bef_K + bef_M)
+```
+
+```{r}
+dim(bef)
+names(bef)
+```
+
+Legg befolkningsdata varaiablene bef_K, bef_M, bef_KM til wf. Husk at de må aggregeres for hele landet (group_by() og så summarise() før de «joines»). Bruk tilslutt mutate() make_date() for å lage en ny variabel år som er en date, dvs aar + month=1L + day=1L.
+
+```{r, echo=FALSE}
+
+wfG <- bef %>%
+  group_by(aar) %>% 
+    summarise(
+        bef_K = sum(bef_K, na.rm = TRUE),
+        bef_M = sum(bef_M, na.rm = TRUE),
+        bef_KM = sum(bef_M, na.rm = TRUE)) 
+ 
+wf <- right_join(wf, wfG, by = "aar")
+wf <- wf %>%
+  mutate(
+    år = make_date(year = aar, month = 1L, day = 1L)
+  )
+```
+
+Da skal du få
+
+```{r}
+wf
+```
+Vi vil nå se på arbeidsstyrke relativt til befolkning på landsbasis, dvs. wf_K/bef_K etc.
+Plot dataen vha. geom_line() for de tre kategoriene. Bruk år som x-variabel.
+
+```{r, echo=FALSE}
+wf %>% 
+    ggplot(wf, mapping = aes(x = år)) +
+  geom_line(mapping = aes(y = wf_K/bef_K, color = "red")) +
+  geom_line(mapping = aes(y = wf_M/bef_M, color = "blue")) +
+  geom_line(mapping = aes(y = wf_KM/bef_KM)) +
+  ggtitle("Arbeidsstyrke relativt til befolkningen. Menn = blå, kvinner = rød ,total = svart.") +
+  theme(legend.position = "none")
+```
+
+Hvordan kan pukkelen rett før 2010 forklares?
+
+Svar = Av grafen ovenfor kan vi lese at, rett før 2010 at arbeidsstyrken til begge to grupper(Menn og Kvinner) er lavere enn 0.6, ved bruk av formelen wf_K/bef_K for kvinner og wf_M/bef_M for menn. Vi ser også at den røde linjen er 'slightly' høyere enn den blå, dvs  arbeidsstyrken relativt til befolkningen for kvinner er høyere sammenlignet med menn. 
+NB, utifra formelen og data vi har brukt her, så kommer kvinner høyere enn menn. Samtidig når man sjekker med ssb's analyse for arbeidsstyrken (Kjønnsbasert) ser vi at menn har større arbeidsstyrke enn kvinner. Vi kan ikke finne logisk argument for denne forskjellen og må undersøke videre. 
+
+```{r}
+names(arblos)
+```
+
+Vi vil nå generere dat for arbeidsstyrken på fylkesbasis. Husk at de to første sifferene i knr angir fylket en kommune ligger i. Bruk dataene i arblos til å finne arbeidsstyrken på fylkesbasis (wf_f). Start med å bruke mutate() til å lage en ny variabel fylke. Grupper så og finn wf_K_f, wf_M_f og wf_KM_f vha. summarise(). Lag til slutt en ny variabel år som en date. Velg til slutt de relevante variabelen vha. select().
+
+```{r}
+# årlige data per fylke
+wf_f <- arblos %>% 
+    mutate(
+        fylke = substr(knr, start = 1, stop = 2)
+    ) %>% 
+    group_by(aar, mnd, fylke) %>% 
+    summarise(
+        wf_K_f = sum(wf_K, na.rm = TRUE),
+        wf_M_f = sum(wf_M, na.rm = TRUE),
+        wf_KM_f = wf_K_f + wf_M_f
+    ) %>% 
+    mutate(år = make_date(aar, mnd, day=1L)) %>% 
+    select(aar, mnd, år, fylke, wf_K_f, wf_M_f, wf_KM_f)
+```
+Vi skal nå ha en tibble wf_f som ser slik ut:
+
+```{r}
+print(wf_f, n = 5)
+```
+Lag også en ny tibble bef_f fra bef som inneholder befolkningen i hvert fylke hvert år.
+
+```{r, echo=FALSE}
+# bef_f <- bef %>% 
+
+```
+```{r}
+bef_f
+```
+
+Lag til slutt tibble-en wf_f_bef som innholde arbeidsstyrke (wf-f) og befolkning (bef-f) på fylkesnivå for hvert år.
+
+```{r, echo=FALSE}
+#wf_f_bef <- wf_f %>% 
+```
+
+Da skal wf_f_bef se slik ut:
+
+```{r}
+print(arrange(wf_f_bef, fylke, aar, mnd))
+```
+Plot nå arbeidsstyrke relativt til befolkning vha. geom_line()
+
+```{r, echo=FALSE}
+# kvinner og menn
+#wf_f_bef %>% 
+#    ggplot() +
+```
+
+
+### Lage regioner
+
+Alle fylkene blir litt rotete så vi definerer istedet seks regioner vha. case_when()
+ og lager en ny tibble wf_r fra wf_f_bef.
+```{r}
+# region
+wf_r <- wf_f_bef %>% 
+    mutate(
+         dato = ymd(paste(aar, mnd, "01", sep = "-")),
+        region = case_when(
+            as.numeric(fylke) == 3 ~ "Oslo",
+            as.numeric(fylke) %in% c(1:2, 4:8) ~ "Østlandet",
+            as.numeric(fylke) %in% c(9, 10) ~ "Sørlandet",
+            as.numeric(fylke) %in% c(11, 12, 14, 15) ~ "Vestlandet",
+            as.numeric(fylke) %in% c(16, 17) ~ "Trøndelag",
+            as.numeric(fylke) %in% c(18, 19, 20) ~ "Nord-Norge"
+        )
+    ) %>% 
+    group_by(dato, region) %>% 
+    summarise(
+        wf_K_r = sum(wf_K_f, na.rm = TRUE),
+        wf_M_r = sum(wf_M_f, na.rm = TRUE),
+        wf_KM_r = wf_K_r + wf_M_r,
+        bef_K_r = sum(bef_K_f, na.rm = TRUE),
+        bef_M_r = sum(bef_M_f, na.rm = TRUE),
+        bef_KM_r = bef_K_r + bef_M_r
+    ) %>% 
+    select(dato, region, wf_K_r, wf_M_r, wf_KM_r, bef_K_r, bef_M_r, bef_KM_r)
+```
+
+Plot nå for regionene wf_KM_r/bef_KM_r, både vha. geom_line() og geom_smooth(). La farge vise regionene. Sett denne i ggplot() slik at det gjelder for både geom_line() og geom_smooth(). Sett i tillegg alpha = 0.5 for geom_line() og se = FALSE for geom_smooth(). Legg til theme(legend.position = "bottom") til slutt for å få legend under plottet.
+
+```{r, echo=FALSE}
+# kvinner og menn
+#wf_r %>% 
+```
+
+Lag tilsvarende plot for kvinner.
+
+```{r, echo=FALSE}
+# kvinner
+#wf_r %>% 
+```
+
+Lag tilsvarende plot for menn
+
+```{r, echo=FALSE}
+# menn
+#wf_r %>% 
+```
+
+Forlar kort den generelle utviklingen i arbeidsstyrken. Hva er det som «redder oss»?
+
+## `nest()` arblos
+
+Da skal vi jobbe direkte med arbeidsløshet og lage lineære modeller for hver av de 418 kommunene. Modellen vi skal lage er på ingen måte perfekt. Vi er interessert i selve teknikken med å organisere dataene og kjøre modeller på mange subsett av dataene (her for hver kommune).
+
+Vi vil se på en modell der vi forklarer arbeidsstyrken i en kommune vha. ungdomsledighet og ledighet blant litt eldre arbeidstakere (30-74 år). En hypotese er at vi vil se en negativ sammenheng mellom ungdomsledighet og arbeidsstyrken. De unge flytter hvis det ikke er jobb.
+
+Vi starter med å gruppere på kommune og nest-e dataene.
+
+```{r}
+arblos_by_knr <- arblos %>% 
+    group_by(knr, knavn) %>% 
+    nest()
+```
+
+```{r}
+print(arblos_by_knr, n = 4)
+arblos_by_knr$data[[1]]
+```
+Vi har nå en tibble med data for hver kommune inne i tibble-en arblos_by_knr. 
+
+Skriv en funksjon som kjører den lineære modellen wf_KM ~ alp_15_29 + alp_30_74 på en input dataframe a_df. Kall funksjonen mod1 (i magel på noe bedre navn).
+
+```{r, echo=FALSE}
+#mod1 <- 
+```
+KJøre så modellen vha. funksjonen mod1 på data i arblos_by_knr, og lag en list-column i arblos_by_knr som inneholder modellen. Kjør også tidy og glance fra broom på modellene for å få hhv. koeffisienter og ulike summary av modellen. Lagre resultatene i hhv. mod1_arblos, mod1_arblos_coef og mod1_arblos_sum (i siste er sum forkortelse for summary)
+
+```{r, echo=FALSE}
+#arblos_by_knr <- 
+```
+
+arblos_by_knr skal nå se ut slik:
+
+```{r}
+arblos_by_knr
+```
+
+### Kommunestørrelse
+
+Vi lager oss så en ny kategori variabel for kommunestørrelse.
+
+```{r}
+kom_str <- bef %>% 
+    filter(aar == 2014) %>% 
+    mutate(
+        k_str = case_when(
+            bef_KM <= 2500 ~ "Svært liten",
+            bef_KM > 2500 & bef_KM <= 6000 ~ "Liten",
+            bef_KM > 6000 & bef_KM <= 20000 ~ "Middels",
+            bef_KM > 20000 & bef_KM <= 60000 ~ "Stor",
+            bef_KM > 60000 & bef_KM <= 1000000 ~ "Svært stor"
+        )
+    ) %>% 
+    select(knr, knavn, bef_KM, k_str)
+head(kom_str)
+```
+
+### Pakker ut og henter model karakteristika
+
+Bruk så unnest() til å pakke ut mod1_arblos_coef og mod1_arblos_coef (husk at de to må stå i en c() og ha anførselstegn). Plukk ut variablene knr, knavn, term, estimate, std.error, p.value...9, adj.r.squared og legg resultatet i mod_arbl_re.
+
+```{r, echo=FALSE}
+#modell arbeidsløse resultat
+#mod_arbl_re <- 
+```
+
+Du skal da ha noe som ser slik ut:
+
+```{r}
+print(mod_arbl_re, n = 10)
+```
+
+Slå sammen kom_str og mod_arbl_re vha. `left_join()`. Kall resultatet for kom_str_mod.
+
+```{r}
+kom_str_mod <- mod_arbl_re %>% 
+    left_join(kom_str, by = c("knr", "knavn")) 
+```
+
+Da skal du ha noe som ser slik ut:
+
+```{r}
+print(kom_str_mod, n = 5)
+```
+
+Vi plotter koeffisientene som er signifikante og lar farge vise kommune størrelse. Tar vekk ekstreme estimat.
+
+```{r}
+kom_str_mod %>% 
+    filter(term == "alp_15_29") %>% 
+    filter(estimate > -500 & estimate < 500 ) %>%
+    filter(p.value...9 < 0.05) %>% 
+    ggplot(mapping = aes(
+        x = estimate,
+        y = p.value...9,
+        colour = k_str
+        )
+        ) +
+    geom_point()
+```
+
+Lag tilsvarende plot for alp_30_74.
+
+```{r, echo=FALSE}
+#kom_str_mod %>% 
+```
+
+Hvor mange har vi?
+
+```{r}
+kom_str_mod %>% 
+    filter(term == "alp_15_29") %>% 
+    group_by(k_str) %>% 
+    summarise(n = n())
+```
+
+```{r}
+kom_str_mod %>% 
+    filter(term == "alp_15_29") %>% 
+    filter(estimate > - 500 & estimate < 500 ) %>%
+    filter(p.value...9 < 0.05) %>% 
+    group_by(k_str) %>% 
+    summarise(n = n())
+```
+
+```{r}
+kom_str_mod %>% 
+    filter(term == "alp_30_74") %>% 
+    filter(estimate > - 500 & estimate < 500 ) %>%
+    filter(p.value...9 < 0.05) %>% 
+    group_by(k_str) %>% 
+    summarise(n = n())
+```
+
+```{r}
+kom_str_mod %>% 
+    filter(term == "alp_15_29") %>% 
+    filter(p.value...9 < 0.05) %>% 
+    group_by(k_str) %>% 
+    summarise(mean_15_29 = mean(estimate))
+```
+
+```{r}
+kom_str_mod %>% 
+    filter(term == "alp_30_74") %>% 
+    filter(p.value...9 < 0.05) %>% 
+    group_by(k_str) %>% 
+    summarise(mean_30_74 = mean(estimate))
+```
+
+```{r}
+kom_str_mod %>% 
+    filter(term == "alp_15_29") %>% 
+    filter(p.value...9 < 0.05) %>% 
+    group_by(k_str) %>% 
+    summarise(n = n())
+```
+
+```{r}
+kom_str_mod %>% 
+    filter(term == "alp_30_74") %>% 
+    filter(p.value...9 < 0.05) %>% 
+    group_by(k_str) %>% 
+    summarise(n = n())
+```
+
+I litt over 50% av kommunene, hovedsaklig de små, ser modellen ut til virke. Kanskje noe å bygge videre på.  
+
+```{r}
+#siste
+```
