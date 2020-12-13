@@ -6,13 +6,19 @@ output: html_document
 ---
 
 ```{r setup}
-library(tidyverse)
-library(lubridate)
 library(modelr)
+library(lubridate)
+library(tidyverse)
 library(broom)
 library(PxWebApiData)
 ```
 
-#
-MODEL
+# Models & Reflections
+
+## Loading the data
+
+```{r}
+arblos <- read_csv("data/al9914m.csv")
+bef <- read_csv("data/bef9914MK.csv")
+```
 
