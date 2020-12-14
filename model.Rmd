@@ -410,6 +410,7 @@ kom_str_mod %>%
 ```
 
 Hvor mange har vi?
+Spørsmålet er litt uklart for oss. Kan ikke forstå hva som menes med "hvor mange".  
 
 ```{r}
 kom_str_mod %>% 

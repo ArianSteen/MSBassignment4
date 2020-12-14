@@ -61,8 +61,8 @@ df_arbl_p_alder <- df_arbl_p_alder %>%
 
 ```{r, echo=FALSE}
 #endrer også navn fra df_arbl_p_alder til arblos_aldersgrp
-#arblos_aldersgrp <- 
-#rm(df_arbl_p_alder)
+arblos_aldersgrp <- separate(data = df_arbl_p_alder, c('aar', 'mnd'), sep = "M", col = "tid" )
+rm(df_arbl_p_alder)
 ```
 
 ### Fikse knavn
@@ -82,7 +82,15 @@ str_remove(
 
 ```{r, echo=FALSE}
 # Fern (-2019) etc
-#arblos_aldersgrp$knavn <- 
+arblos_aldersgrp$knavn <- str_remove(
+  string = arblos_aldersgrp$knavn, 
+  pattern = fixed(" (-2019)"))
+arblos_aldersgrp$knavn <- str_remove(
+  string = arblos_aldersgrp$knavn, 
+  pattern = fixed(" (1992-2019)"))
+arblos_aldersgrp$knavn <- str_remove(
+  string = arblos_aldersgrp$knavn, 
+  pattern = fixed(" (1994-2019)"))
 ```
 
 Slik skal de 10 første navnene nå se ut:
@@ -96,7 +104,14 @@ head(unique(arblos_aldersgrp$knavn), n = 10)
 arblos_aldersgrp er ikke tidy. Hver observasjon er spredd over tre rekke, hhv. 15_29, 30_74 og 15_74. Pivot dataframen `arblos_aldersgrp` slik at vi får en observasjon per rekke. Bruk opsjonen `names_prefix` og sett denne lik "alp_" slik at de tre nye variabelnavnene starter med dette. Bruk samtidig mutate til å endre variablene `aar`og `mnd` til integer.
 
 ```{r, echo=FALSE}
-#arblos_aldersgrp <- 
+arblos_aldersgrp <- arblos_aldersgrp %>%
+  pivot_wider(
+    names_from = alder,
+    values_from = alp,
+    names_prefix = "alp_") %>% 
+  mutate(aar = as.integer(aar),
+    mnd = as.integer(mnd)
+  )
 ```
 
 Slik skal `arblos_aldersgrp` nå se ut.
@@ -126,7 +141,9 @@ Hva som må fikses i`df_arbl_p_kjonn`:
 
 ```{r, echo=FALSE}
 # Fern (-2019) etc
-#df_arbl_p_kjonn$knavn <- 
+df_arbl_p_kjonn$knavn <- str_remove(df_arbl_p_kjonn$knavn, pattern = fixed(" (-2019)"))
+df_arbl_p_kjonn$knavn <- str_remove(df_arbl_p_kjonn$knavn, pattern = fixed(" (1992-2019)"))
+df_arbl_p_kjonn$knavn <- str_remove(df_arbl_p_kjonn$knavn, pattern = fixed(" (1994-2019)"))
 ```
 
 ```{r}
@@ -136,7 +153,7 @@ print(arrange(df_arbl_p_kjonn, knr, knavn, tid, kjonn), n = 2)
 ### Splitte tid
 
 ```{r, echo=FALSE}
-#df_arbl_p_kjonn <- 
+df_arbl_p_kjonn <- separate(data = df_arbl_p_kjonn, c('aar', 'mnd'), col = "tid", sep = "M")
 ```
 
 ```{r}
@@ -146,7 +163,11 @@ print(arrange(df_arbl_p_kjonn, knr, knavn, aar, mnd, kjonn), n = 2)
 ### En observasjon per rekke
 
 ```{r, echo=FALSE}
-#df_arbl_p_kjonn <- 
+df_arbl_p_kjonn <- df_arbl_p_kjonn %>%
+    pivot_wider(names_from = kjonn,
+    values_from = alp_k, names_prefix = c("alp_", "alp_")) %>% 
+    mutate(aar = as.integer(aar),
+         mnd = as.integer(mnd))
 ```
 
 ```{r}
@@ -171,9 +192,22 @@ Gjør som ovenfor.
 
 ```{r, echo=FALSE}
 # Fikse navn
-#df_arbl$knavn <- 
-#df_arbl <- 
-#df_arbl <- 
+df_arbl$knavn <- str_remove(df_arbl$knavn, pattern = fixed(" (-2019)"))
+df_arbl$knavn <- str_remove(df_arbl$knavn, pattern = fixed(" (1992-2019)"))
+df_arbl$knavn <- str_remove(df_arbl$knavn, pattern = fixed(" (1994-2019)"))
+df_arbl <- separate(data = df_arbl, c('aar', 'mnd'), col = "tid", sep = "M")
+df_arbl <- df_arbl %>%
+  mutate(aar = as.integer(aar),
+         mnd = as.integer(mnd))
+df_arbl <- df_arbl %>%
+  pivot_wider(
+    names_from = kjonn,
+    values_from = al,
+    names_prefix = c("al_", "al_")
+  )
+df_arbl <- df_arbl %>%
+  mutate(aar = as.integer(aar),
+         mnd = as.integer(mnd))
 ```
 
 Har du gjort det riktig skal `df_arbl` nå se slik ut.
@@ -192,7 +226,9 @@ Tenk nøye gjennom hvilke variabler man skal «joine» på.
 
 ```{r, echo=FALSE}
 # arbeidsløse 1999 til 2014 månedlige data
-#al9914m <- 
+al9914m <- df_arbl %>% 
+  right_join(df_arbl_p_kjonn) %>% 
+  right_join(arblos_aldersgrp)
 ```
 
 ```{r}
@@ -243,7 +279,8 @@ df_bef_M <- df_bef_M %>%
 
 ```{r, echo=FALSE}
 # Befolkning 1999 til 2014 Menn og Kvinner
-#bef9914MK <- 
+bef9914MK <- df_bef_K %>% 
+  right_join(df_bef_M)
 ```
 
 ```{r}
@@ -256,13 +293,21 @@ names(bef9914MK)
 Fiks kommunenavnene.
 
 ```{r, echo=FALSE}
-#bef9914MK$knavn <- 
+bef9914MK$knavn <- str_remove(
+  string = bef9914MK$knavn,
+  pattern = fixed(" (-2019)"))
+bef9914MK$knavn <- str_remove(
+  string = bef9914MK$knavn,
+  pattern = fixed(" (1992-2019)"))
+bef9914MK$knavn <- str_remove(
+  string = bef9914MK$knavn,
+  pattern = fixed(" (1994-2019)"))
 ```
 
 ### Skifte navn fra tid til aar
 
 ```{r, echo=FALSE}
-#bef9914MK <- 
+bef9914MK <- separate(data = bef9914MK, "aar", col = "tid", sep = "M")
 ```
 
 ### Gjøre om alder fra chr til integer
@@ -282,7 +327,17 @@ bef9914MK <- bef9914MK %>%
 Vi vil benytte årsklassene "0_14", "15_29", "30_74" og "75_105" siden disse samsvarer med dem brukt for arbeidsløshet. Bruk `mutate()`, `case_when()` og `alder %in% c(0:14) ~ "0_14"` osv. for å definere årsklassene. Gi variabelen med årsklassene navnet `ald_int`. Bruk så `group_by()` på knr, knavn, aar og ald_int og summer opp vha. `sum()`. La siste linjen i `summarise()` være `bef_MK = bef_K + bef_M` så får vi også med oss total befolkning for de ulike årsklassene.
 
 ```{r, echo=FALSE}
-#bef9914MK <- 
+bef9914MK <- bef9914MK %>% 
+  mutate(alder = 
+  case_when(alder %in% c(0:14) ~ "0_14",
+      alder %in% c(15:29) ~ "15_29",
+      alder %in% c(30:74) ~ "30_74",
+      alder %in% c(75:105) ~ "75_105")) %>% 
+  rename(ald_int = alder) %>% 
+  group_by(knr, knavn, aar, ald_int) %>% 
+  summarise(bef_K = sum(bef_K), 
+            bef_M = sum(bef_M),
+            bef_MK = sum(bef_K + bef_M))
 ```
 
 ```{r}
@@ -292,7 +347,11 @@ print(bef9914MK, m = 2)
 ### Gjør `pivot_` så vi blir «tidy».
 
 ```{r, echo=FALSE}
-#bef9914MK <- 
+bef9914MK <- bef9914MK %>% 
+  pivot_wider(
+    names_from = ald_int,
+    values_from = c(bef_K, bef_M, bef_MK)
+  )
 ```
 
 Gjør du ting rett skal `bef9914MK` nå se slik ut:
@@ -315,6 +374,6 @@ write_csv(bef9914MK, "bef9914MK.csv")
 ```
 
 ```{r}
-#rm(list = ls())
+rm(list = ls())
 ```
 

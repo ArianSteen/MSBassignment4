@@ -247,6 +247,7 @@ Vi har lagret det vi har hentet og kan nå rydde opp.
 
 ```{r}
 # Fjern # fra neste hvis en vil slette alle objecter
-#rm(list = ls())
+rm(list = ls())
 ```
+
 
