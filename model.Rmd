@@ -134,7 +134,7 @@ wf %>%
 Hvordan kan pukkelen rett før 2010 forklares?
 
 Svar = Av grafen ovenfor kan vi lese at, rett før 2010 arbeidsstyrken til begge to grupper(Menn og Kvinner) er lavere enn 0.6, ved bruk av formelen wf_K/bef_K for kvinner og wf_M/bef_M for menn. Vi ser også at den røde linjen er 'slightly' høyere enn den blå, dvs  arbeidsstyrken relativt til befolkningen for kvinner er høyere sammenlignet med menn. 
-NB, utifra formelen og data vi har brukt her, så kommer kvinner høyere enn menn. Samtidig når man sjekker med ssb's analyse for arbeidsstyrken (Kjønnsbasert) ser vi at menn har større arbeidsstyrke enn kvinner. Vi kan ikke finne logisk argument for denne forskjellen og må undersøke videre. 
+NB, utifra formelen og data vi har brukt her, så kommer kvinner høyere enn menn. Samtidig når man sjekker med ssb's analyse for arbeidsstyrken (Kjønnsbasert) ser vi at menn har større arbeidsstyrke enn kvinner. En årsak til dette kan være finanskrisen som oppstod i 2008. Med tanke på at arbeidsstyrken er høyt knyttet til økonomien, så går vi utifra at finanskrisen kan ha gidd utlsag på grafen. Den oppstår litt senere enn 2008, mne dette kan være på grunn av det vi kaller for "lag" i økonomentien, som går ut på at det kan ta litt tid før store endringer gir utslag. Derfor oppsår denne pukkelen litt i etterkant av selve finanskrisen. 
 
 ```{r}
 names(arblos)
