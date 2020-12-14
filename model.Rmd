@@ -140,7 +140,7 @@ NB, utifra formelen og data vi har brukt her, så kommer kvinner høyere enn men
 names(arblos)
 ```
 
-Vi vil nå generere dat for arbeidsstyrken på fylkesbasis. Husk at de to første sifferene i knr angir fylket en kommune ligger i. Bruk dataene i arblos til å finne arbeidsstyrken på fylkesbasis (wf_f). Start med å bruke mutate() til å lage en ny variabel fylke. Grupper så og finn wf_K_f, wf_M_f og wf_KM_f vha. summarise(). Lag til slutt en ny variabel år som en date. Velg til slutt de relevante variabelen vha. select().
+Vi vil nå generere data for arbeidsstyrken på fylkesbasis. Husk at de to første sifrene i knr angir fylket en kommune ligger i. Bruk dataene i arblos til å finne arbeidsstyrken på fylkesbasis (wf_f). Start med å bruke mutate() til å lage en ny variabel fylke. Grupper så og finn wf_K_f, wf_M_f og wf_KM_f vha. summarise(). Lag til slutt en ny variabel år som en date. Velg til slutt de relevante variabelen vha. select().
 
 ```{r}
 # årlige data per fylke
@@ -284,6 +284,7 @@ Forlar kort den generelle utviklingen i arbeidsstyrken. Hva er det som «redder 
 Svar: Grafen illustrerer flere momenter. Først ser vi at vestlandet (Blåfarge) har relativt høyere arbeidsstyrke sammenlignet med andre fylker. 
 Vi ser også at arbeidsstyrken holdt seg rundt 0.6 fra 2000 til 2010 og etter det har det synket, en grunn kan være nedgangen i oljesektoren etter 2010 (Oljeprisen falt dramatisk fra over 120 til lavere en 50). Når vi sammenligner de ulike plottene for kvinner og menn, kan man konkludere at kvinner har hatt en økende trend sammenlignet med menn. 
 Det som kan redde oss, dvs forbedre arbeidsstyrken er at økonomien utvikles slik at det gir mulighet til å sysselsette flere arbeidsledige.
+Det som var med på å redde oss, var en god pengepolitikk Regjeringen økte pengebruken kraftig for å unngå at arbeidsledigheten skulle øke for mye. Likt som de gjorde etter 2. verdenskrig. Økning i offentlige utgifter gir ett positivt utfall på aggregert etterspørsel, og unngår at konsum innad i landet blir redusert for mye, slik at bedrifter i større grad kan overleve, og arbeidsplasser består. Norges bank satte også opp rentene, for å øke forbrukerenes inntekt. (E24,2010). 
 
 
 ## `nest()` arblos
