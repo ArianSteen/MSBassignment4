@@ -2,7 +2,9 @@
 title: "Assignment Four"
 author: "Arian, Anne"
 date: "11 12 2020"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup}
@@ -14,7 +16,7 @@ library(PxWebApiData)
 library(ggplot2)
 ```
 
-# Models & Reflections
+# Models 
 
 ## Loading the data
 
@@ -129,6 +131,7 @@ wf %>%
   geom_line(mapping = aes(y = wf_KM/bef_KM)) +
   ggtitle("Arbeidsstyrke relativt til befolkningen. Menn = blå, kvinner = rød ,total = svart.") +
   theme(legend.position = "none")
+
 ```
 
 Hvordan kan pukkelen rett før 2010 forklares?
@@ -284,7 +287,7 @@ Forlar kort den generelle utviklingen i arbeidsstyrken. Hva er det som «redder 
 Svar: Grafen illustrerer flere momenter. Først ser vi at vestlandet (Blåfarge) har relativt høyere arbeidsstyrke sammenlignet med andre fylker. 
 Vi ser også at arbeidsstyrken holdt seg rundt 0.6 fra 2000 til 2010 og etter det har det synket, en grunn kan være nedgangen i oljesektoren etter 2010 (Oljeprisen falt dramatisk fra over 120 til lavere en 50). Når vi sammenligner de ulike plottene for kvinner og menn, kan man konkludere at kvinner har hatt en økende trend sammenlignet med menn. 
 Det som kan redde oss, dvs forbedre arbeidsstyrken er at økonomien utvikles slik at det gir mulighet til å sysselsette flere arbeidsledige.
-Det som var med på å redde oss, var en god pengepolitikk Regjeringen økte pengebruken kraftig for å unngå at arbeidsledigheten skulle øke for mye. Likt som de gjorde etter 2. verdenskrig. Økning i offentlige utgifter gir ett positivt utfall på aggregert etterspørsel, og unngår at konsum innad i landet blir redusert for mye, slik at bedrifter i større grad kan overleve, og arbeidsplasser består. Norges bank satte også opp rentene, for å øke forbrukerenes inntekt. (E24,2010). 
+Det som var med på å redde oss, var en god pengepolitikk Regjeringen økte pengebruken kraftig for å unngå at arbeidsledigheten skulle øke for mye. Likt som de gjorde etter 2. verdenskrig. Økning i offentlige utgifter gir ett positivt utfall på aggregert etterspørsel, og unngår at konsum innad i landet blir redusert for mye, slik at bedrifter i større grad kan overleve, og arbeidsplasser består. Norges bank satte også opp rentene, for å øke forbrukerenes inntekt. (E24,2010). Når vi sammenligner kvinner og menn, er det viktig å utjevne ulike forskjeller mtp lønn og tilgang til arbeid som ofte har vært dominert av det ene kjønnet. 
 
 
 ## `nest()` arblos
@@ -411,7 +414,8 @@ kom_str_mod %>%
 ```
 
 Hvor mange har vi?
-Spørsmålet er litt uklart for oss. Kan ikke forstå hva som menes med "hvor mange".  
+For å svare på dette er vi spesielt interresert i å finne ut antallet koeffisient forskjellig fra null.
+For å finne ut dette må vi kjøre en lineær modell hvor vi får tatt ut koeffisient data/for de to gruppene.
 
 ```{r}
 kom_str_mod %>% 
@@ -475,3 +479,5 @@ I litt over 50% av kommunene, hovedsaklig de små, ser modellen ut til virke. Ka
 ```{r}
 #siste
 ```
+
+
