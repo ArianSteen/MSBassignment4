@@ -1,0 +1,36 @@
+---
+title: "ag_comments"
+output: html_notebook
+---
+
+1.  En fordel å benytte regular expressions for å fikse knavn.
+
+2.  regexp for å fikse navnene, dvs.
+
+``` {.r}
+my_pat <- "\\s*\\([-\\d]+\\)\\s*"
+arblos_aldersgrp$knavn <- str_remove(
+    string = arblos_aldersgrp$knavn,
+    pattern = my_pat
+)
+```
+
+3\. Regexp ser kanskje skremmende ut, men er ikke så ille når en tar det steg for steg:
+
+``` {.r}
+# * er null eller flere ganger, + er en eller flere, 
+# \\ for escape i R for hva som vanligvis er bare \
+\\s*; null eller flere white-space
+opp til en parentes start; \\(
+så bindestrek eller tall én eller flere ganger; [-\\d]+
+opp til parentes slutt; \\),
+så til slutt null eller flere white-space; \\s*
+```
+
+4.  Ved join kan character vektorer utgjøre et problem. Navnet må være identisk likt for at vi skal få match (en enkelt space etter navnet vil være nok til at vi ikke får match).
+
+5.  Når dere benyttet `right_join()` til å sette sammen dataframes til en stor dataframe benyttet dere ikke `by` argumentet. Dere får da match vha. knr, knavn, aar, mnd. Skulle knavn være ørlite forskjellig vil vi ikke få match og vi får en feil som kan være vanskelig å finne. Et godt råd er derfor å sjekke om knavn er likt i de tre dataframene. Jeg har lagt inn slik kode rett før `join` rundt linje 260 i `make-data-tidy.Rms`. Her var skrivemåten for navnene like så ikke noe problem. Dette er ikke noe vi kan ta for gitt selv når dataene hentes fra samme kilde.
+
+6.  I model.Rmd ca. linje 130 setter dere fargen (colour =) inne i `aes()` funksjonen. Dette betyr at ggplot skal sette farge på hver kategori vha. en kategorivariabel. Når dere selv vil styre fargene spesifiserer dere fargen *utenfor* `aes()`. Altså `geom_line(mapping = aes(y = wf_M/bef_M),  color = "blue")` og *ikke* `geom_line(mapping = aes(y = wf_M/bef_M, color = "blue"))`
+
+7.  Flott arbeid.
